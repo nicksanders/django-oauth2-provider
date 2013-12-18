@@ -138,7 +138,7 @@ class AccessTokenView(AccessTokenView):
             at.expires = now() - timedelta(days=1)
             at.save()
 
-    def get_external_user(self, user, client):
+    def get_external_user(self, request, user, client):
         try:
             # Attempt to fetch an existing access token.
             eu = ExternalUser.objects.get(user=user, client=client)

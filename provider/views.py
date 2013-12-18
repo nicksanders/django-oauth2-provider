@@ -457,7 +457,7 @@ class AccessToken(OAuthView, Mixin):
         """
         raise NotImplementedError
 
-    def get_external_user(self, user, client):
+    def get_external_user(self, request, user, client):
         """
         Override to handle external user id creation.
 
