@@ -120,7 +120,6 @@ class Grant(models.Model):
     def __unicode__(self):
         return self.code
 
-
 class AccessToken(models.Model):
     """
     Default access token implementation. An access token is a time limited
@@ -146,7 +145,7 @@ class AccessToken(models.Model):
     client = models.ForeignKey(Client)
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
-            choices=scope.SCOPE_VALUE_DICT)
+            choices=scope.SCOPE_CHOICES)
 
     objects = AccessTokenManager()
 
