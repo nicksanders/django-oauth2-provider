@@ -19,7 +19,6 @@ except ImportError:
 
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
-
 class Client(models.Model):
     """
     Default client implementation.
@@ -36,11 +35,20 @@ class Client(models.Model):
 
     Clients are outlined in the :rfc:`2` and its subsections.
     """
+    CLIENT_STATUS_CHOICES = ( (1, 'TEST'),
+                              (2, 'LIVE'),
+                              (3, 'DISABLED'),
+                            )
     user = models.ForeignKey(AUTH_USER_MODEL, related_name='oauth2_client',
         blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.URLField(help_text="Your application's callback URL")
+    webhook_uri = models.URLField(help_text="Your application's webhook URL", null=True, blank=True)
+    logo = models.URLField(null=True, blank=True, help_text="40x40 pixel logo of your application")
+    status = models.PositiveSmallIntegerField(max_length=2, choices=CLIENT_STATUS_CHOICES, default=1)
+    last_updated_date = models.DateTimeField(auto_now=True)
+    created_date = models.DateTimeField(auto_now_add=True)
     client_id = models.CharField(max_length=255, default=short_token)
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
@@ -135,6 +143,7 @@ class AccessToken(models.Model):
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
             choices=constants.SCOPES)
+    external_user_id = models.CharField(max_length=20)
 
     objects = AccessTokenManager()
 

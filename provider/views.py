@@ -474,6 +474,7 @@ class AccessToken(OAuthView, Mixin):
 
         response_data = {
             'access_token': access_token.token,
+            'external_user_id': access_token.external_user_id,
             'token_type': constants.TOKEN_TYPE,
             'expires_in': access_token.get_expire_delta(),
             'scope': ' '.join(scope.names(access_token.scope)),

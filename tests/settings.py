@@ -58,5 +58,6 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'provider',
     'provider.oauth2',
+    'south',
 )
 
