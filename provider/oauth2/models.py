@@ -146,7 +146,6 @@ class AccessToken(models.Model):
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
             choices=constants.SCOPES)
-    external_user_id = models.CharField(max_length=20)
 
     objects = AccessTokenManager()
 
@@ -200,3 +199,16 @@ class RefreshToken(models.Model):
 
     def __unicode__(self):
         return self.token
+
+class ExternalUser(models.Model):
+    """
+    External user model that stores info exposed to developers
+    such as user_id that you may want to differentiate from user's
+    internal user_id
+    """
+    class Meta:
+        unique_together = (('user', 'client'),)
+
+    user = models.ForeignKey(AUTH_USER_MODEL)
+    client = models.ForeignKey(Client)
+    external_user_id = models.CharField(max_length=30, unique=True, default=short_token)
