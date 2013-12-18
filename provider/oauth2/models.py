@@ -145,7 +145,7 @@ class AccessToken(models.Model):
     client = models.ForeignKey(Client)
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
-            choices=constants.SCOPES)
+            choices=constants.SCOPE_VALUE_DICT)
 
     objects = AccessTokenManager()
 
