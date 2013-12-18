@@ -11,6 +11,7 @@ from ..constants import CLIENT_TYPES
 from ..utils import now, short_token, long_token, get_code_expiry
 from ..utils import get_token_expiry, serialize_instance, deserialize_instance
 from .managers import AccessTokenManager
+from .. import scope
 
 try:
     from django.utils import timezone
@@ -145,7 +146,7 @@ class AccessToken(models.Model):
     client = models.ForeignKey(Client)
     expires = models.DateTimeField()
     scope = models.IntegerField(default=constants.SCOPES[0][0],
-            choices=constants.SCOPE_VALUE_DICT)
+            choices=scope.SCOPE_VALUE_DICT)
 
     objects = AccessTokenManager()
 
