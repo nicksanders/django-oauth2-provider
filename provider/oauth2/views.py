@@ -142,7 +142,7 @@ class AccessTokenView(AccessTokenView):
         try:
             # Attempt to fetch an existing access token.
             eu = ExternalUser.objects.get(user=user, client=client)
-        except AccessToken.DoesNotExist:
+        except ExternalUser.DoesNotExist:
             # None found... make a new one!
             eu = ExternalUser.objects.create(user=user, client=client)
         return eu
