@@ -56,6 +56,9 @@ class Client(models.Model):
     def __unicode__(self):
         return self.redirect_uri
 
+    def __str__(self):
+        return self.redirect_uri
+
     def get_default_token_expiry(self):
         public = (self.client_type == 1)
         return get_token_expiry(public)
