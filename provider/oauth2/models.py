@@ -12,6 +12,7 @@ from ..utils import now, short_token, long_token, get_code_expiry
 from ..utils import get_token_expiry, serialize_instance, deserialize_instance
 from .managers import AccessTokenManager
 from .. import scope
+from django_enumfield import enum
 
 try:
     from django.utils import timezone
@@ -36,10 +37,11 @@ class Client(models.Model):
 
     Clients are outlined in the :rfc:`2` and its subsections.
     """
-    CLIENT_STATUS_CHOICES = ( (1, 'TEST'),
-                              (2, 'LIVE'),
-                              (3, 'DISABLED'),
-                            )
+    class Status(enum.Enum):
+        TEST = 1
+        LIVE = 2
+        DISABLED = 3
+
     user = models.ForeignKey(AUTH_USER_MODEL, related_name='oauth2_client',
         blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
@@ -47,7 +49,7 @@ class Client(models.Model):
     redirect_uri = models.URLField(help_text="Your application's callback URL")
     webhook_uri = models.URLField(help_text="Your application's webhook URL", null=True, blank=True)
     logo = models.URLField(null=True, blank=True, help_text="40x40 pixel logo of your application")
-    status = models.PositiveSmallIntegerField(max_length=2, choices=CLIENT_STATUS_CHOICES, default=1)
+    status = models.PositiveSmallIntegerField(max_length=2, choices=Status.choices(), default=1)
     last_updated_date = models.DateTimeField(auto_now=True)
     created_date = models.DateTimeField(auto_now_add=True)
     client_id = models.CharField(max_length=255, default=short_token)
