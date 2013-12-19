@@ -6,7 +6,7 @@
         <ul>
             {% for permission in oauth_data.scope|scopes %}
                 <li>
-                    {% SCOPE_VERBOSE_DICT[permission] %}
+                    {{ permission|scope_verbose }}
                 </li>
             {% endfor %}
         </ul>
