@@ -7,7 +7,7 @@ from ..utils import now
 from .forms import AuthorizationRequestForm, AuthorizationForm
 from .forms import PasswordGrantForm, RefreshTokenGrantForm
 from .forms import AuthorizationCodeGrantForm
-from .models import Client, RefreshToken, AccessToken, ExternalUser
+from .models import Client, RefreshToken, AccessToken
 from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
 
 
@@ -137,13 +137,3 @@ class AccessTokenView(AccessTokenView):
         else:
             at.expires = now() - timedelta(days=1)
             at.save()
-
-    def get_external_user(self, request, user, client):
-        try:
-            # Attempt to fetch an existing access token.
-            eu = ExternalUser.objects.get(user=user, client=client)
-        except ExternalUser.DoesNotExist:
-            # None found... make a new one!
-            eu = ExternalUser.objects.create(user=user, client=client)
-        return eu
-

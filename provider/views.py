@@ -457,14 +457,6 @@ class AccessToken(OAuthView, Mixin):
         """
         raise NotImplementedError
 
-    def get_external_user(self, request, user, client):
-        """
-        Override to handle external user id creation.
-
-        :return: ``ExternalUser`` - external user object
-        """
-        raise NotImplementedError
-
     def error_response(self, error, mimetype='application/json', status=400,
             **kwargs):
         """
@@ -474,7 +466,7 @@ class AccessToken(OAuthView, Mixin):
         return HttpResponse(json.dumps(error), mimetype=mimetype,
                 status=status, **kwargs)
 
-    def access_token_response(self, access_token, external_user):
+    def access_token_response(self, access_token):
         """
         Returns a successful response after creating the access token
         as defined in :rfc:`5.1`.
@@ -486,9 +478,6 @@ class AccessToken(OAuthView, Mixin):
             'expires_in': access_token.get_expire_delta(),
             'scope': ' '.join(scope.names(access_token.scope)),
         }
-
-        if external_user:
-            response_data['user_id'] = external_user.external_user_id
 
         # Not all access_tokens are given a refresh_token
         # (for example, public clients doing password auth)
@@ -518,12 +507,7 @@ class AccessToken(OAuthView, Mixin):
 
         self.invalidate_grant(grant)
 
-        if constants.EXPOSE_EXTERNAL_USER_ID:
-            external_user = self.get_external_user(request, grant.user, client)
-        else:
-            external_user = None
-
-        return self.access_token_response(at, external_user)
+        return self.access_token_response(at)
 
     def refresh_token(self, request, data, client):
         """
@@ -539,12 +523,7 @@ class AccessToken(OAuthView, Mixin):
                 client)
         rt = self.create_refresh_token(request, at.user, at.scope, at, client)
 
-        if constants.EXPOSE_EXTERNAL_USER_ID:
-            external_user = self.get_external_user(request, at.user, client)
-        else:
-            external_user = None
-
-        return self.access_token_response(at, external_user)
+        return self.access_token_response(at)
 
     def password(self, request, data, client):
         """
@@ -563,12 +542,7 @@ class AccessToken(OAuthView, Mixin):
             if client.client_type != 1:
                 rt = self.create_refresh_token(request, user, scope, at, client)
 
-        if constants.EXPOSE_EXTERNAL_USER_ID:
-            external_user = self.get_external_user(request, user, client)
-        else:
-            external_user = None
-
-        return self.access_token_response(at, external_user)
+        return self.access_token_response(at)
 
     def get_handler(self, grant_type):
         """
