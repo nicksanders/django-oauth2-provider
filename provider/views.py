@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from django.core.exceptions import ObjectDoesNotExist
-from oauth2.models import Client
+from oauth2.models import Client, ClientStatus
 from . import constants, scope
 
 
@@ -209,6 +209,12 @@ class Authorize(OAuthView, Mixin):
             raise OAuthError({
                 'error': 'unauthorized_client',
                 'error_description': _("An unauthorized client tried to access"
+                    " your resources.")
+            })
+        elif client.status == ClientStatus.DISABLED:
+            raise OAuthError({
+                'error': 'disabled_client',
+                'error_description': _("A disabled client tried to access"
                     " your resources.")
             })
 

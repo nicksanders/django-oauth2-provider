@@ -21,6 +21,11 @@ except ImportError:
 
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
+class ClientStatus(enum.Enum):
+    TEST = 1
+    LIVE = 2
+    DISABLED = 3
+
 class Client(models.Model):
     """
     Default client implementation.
@@ -37,10 +42,6 @@ class Client(models.Model):
 
     Clients are outlined in the :rfc:`2` and its subsections.
     """
-    class Status(enum.Enum):
-        TEST = 1
-        LIVE = 2
-        DISABLED = 3
 
     user = models.ForeignKey(AUTH_USER_MODEL, related_name='oauth2_client',
         blank=True, null=True)
@@ -49,7 +50,7 @@ class Client(models.Model):
     redirect_uri = models.URLField(help_text="Your application's callback URL")
     webhook_uri = models.URLField(help_text="Your application's webhook URL", null=True, blank=True)
     logo = models.URLField(null=True, blank=True, help_text="40x40 pixel logo of your application")
-    status = models.PositiveSmallIntegerField(max_length=2, choices=Status.choices(), default=1)
+    status = models.PositiveSmallIntegerField(max_length=2, choices=ClientStatus.choices(), default=1)
     last_updated_date = models.DateTimeField(auto_now=True)
     created_date = models.DateTimeField(auto_now_add=True)
     client_id = models.CharField(max_length=255, default=short_token)
