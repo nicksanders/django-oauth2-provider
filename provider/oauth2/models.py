@@ -12,7 +12,6 @@ from ..utils import now, short_token, long_token, get_code_expiry
 from ..utils import get_token_expiry, serialize_instance, deserialize_instance
 from .managers import AccessTokenManager
 from .. import scope
-from django_enumfield import enum
 
 try:
     from django.utils import timezone
@@ -21,10 +20,16 @@ except ImportError:
 
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
-class ClientStatus(enum.Enum):
+class ClientStatus:
     TEST = 1
     LIVE = 2
     DISABLED = 3
+
+    CHOICES = (
+        (TEST, 'TEST'),
+        (LIVE, 'LIVE'),
+        (DISABLED, 'DISABLED'),
+    )
 
 class Client(models.Model):
     """
@@ -50,7 +55,7 @@ class Client(models.Model):
     redirect_uri = models.URLField(help_text="Your application's callback URL")
     webhook_uri = models.URLField(help_text="Your application's webhook URL", null=True, blank=True)
     logo = models.URLField(null=True, blank=True, help_text="40x40 pixel logo of your application")
-    status = models.PositiveSmallIntegerField(max_length=2, choices=ClientStatus.choices(), default=1)
+    status = models.PositiveSmallIntegerField(max_length=2, choices=ClientStatus.CHOICES, default=1)
     last_updated_date = models.DateTimeField(auto_now=True)
     created_date = models.DateTimeField(auto_now_add=True)
     client_id = models.CharField(max_length=255, default=short_token)
