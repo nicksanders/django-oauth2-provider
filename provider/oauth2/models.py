@@ -61,6 +61,8 @@ class Client(models.Model):
     client_id = models.CharField(max_length=255, default=short_token)
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
+    allowed_scope = models.IntegerField(default=constants.SCOPES[0][0],
+                                        choices=scope.SCOPE_CHOICES)
 
     def __unicode__(self):
         return self.redirect_uri

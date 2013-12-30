@@ -172,6 +172,20 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
 
         return redirect_uri
 
+    def clean_scope(self):
+        cleaned_scope = super(AuthorizationRequestForm, self).clean_scope()
+
+        print self.client.allowed_scope
+        print cleaned_scope
+
+        # All of the requested scopes must exist in the allowed scopes
+        if (self.client.allowed_scope & cleaned_scope) != cleaned_scope:
+            raise OAuthValidationError({
+                'error': 'invalid_scope',
+                'error_description': _("The requested scope is not allowed "
+                    "for this client")
+            })
+        return cleaned_scope
 
 class AuthorizationForm(ScopeMixin, OAuthForm):
     """
