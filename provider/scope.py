@@ -8,6 +8,7 @@ Scopes can be combined, such as ``"read write"``. Note that a single
 See :class:`provider.scope.to_int` on how scopes are combined.
 """
 
+import operator
 from .constants import SCOPES
 
 SCOPE_CHOICES = [(value, name) for (value, name, verbose) in SCOPES]
@@ -110,3 +111,9 @@ def decompose(scope):
     Returns a list of masks given a combined scope value
     """
     return [s for s in SCOPE_VALUE_DICT if s & scope]
+
+def compose(*scopes):
+    """
+    Returns a combined scope value given a list of masks
+    """
+    return reduce(operator.or_, scopes, 0)
