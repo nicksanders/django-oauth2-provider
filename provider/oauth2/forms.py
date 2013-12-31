@@ -98,11 +98,10 @@ class ScopeMixin(object):
         The scope is assembled by combining all the set flags into a single
         integer value which we can later check again for set bits.
 
-        If *no* scope is set, we return the default scope which is the first
-        defined scope in :attr:`provider.constants.SCOPES`.
+        If *no* scope is set, we return 0.
 
         """
-        default = SCOPES[0][0]
+        default = 0
 
         flags = self.cleaned_data.get('scope', [])
 
