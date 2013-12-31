@@ -31,6 +31,29 @@ class ClientStatus:
         (DISABLED, 'DISABLED'),
     )
 
+class ScopeField(models.IntegerField):
+    initial = {}
+
+    def __init__(self, *args, **kwargs):
+        kwargs['choices'] = scope.SCOPE_CHOICES
+        super(ScopeField, self).__init__(self, *args, **kwargs)
+
+    def formfield(self, **kwargs):
+        from .forms import ScopeChoiceField
+        defaults = {'choices_form_class': ScopeChoiceField}
+        defaults.update(kwargs)
+        return super(ScopeField, self).formfield(**defaults)
+
+    def validate(self, value, model_instance):
+        # all the bits in value must be present in list of all scopes
+        return value == (value & scope.to_int(*scope.SCOPE_NAME_DICT.values()))
+
+    def __unicode__(self):
+        return u'scope'
+
+    def __str__(self):
+        return 'scope'
+
 class Client(models.Model):
     """
     Default client implementation.
@@ -61,8 +84,7 @@ class Client(models.Model):
     client_id = models.CharField(max_length=255, default=short_token)
     client_secret = models.CharField(max_length=255, default=long_token)
     client_type = models.IntegerField(choices=CLIENT_TYPES)
-    allowed_scope = models.IntegerField(default=constants.SCOPES[0][0],
-                                        choices=scope.SCOPE_CHOICES)
+    scope = ScopeField(default=0)
 
     def __unicode__(self):
         return self.redirect_uri
@@ -125,7 +147,7 @@ class Grant(models.Model):
     code = models.CharField(max_length=255, default=long_token)
     expires = models.DateTimeField(default=get_code_expiry)
     redirect_uri = models.CharField(max_length=255, blank=True)
-    scope = models.IntegerField(default=0)
+    scope = ScopeField(default=0)
 
     def __unicode__(self):
         return self.code
@@ -154,8 +176,7 @@ class AccessToken(models.Model):
     token = models.CharField(max_length=255, default=long_token, db_index=True)
     client = models.ForeignKey(Client)
     expires = models.DateTimeField()
-    scope = models.IntegerField(default=constants.SCOPES[0][0],
-            choices=scope.SCOPE_CHOICES)
+    scope = ScopeField(default=0)
 
     objects = AccessTokenManager()
 
@@ -209,3 +230,6 @@ class RefreshToken(models.Model):
 
     def __unicode__(self):
         return self.token
+
+from south.modelsinspector import add_introspection_rules
+add_introspection_rules([], ["^provider\.oauth2\.models\.ScopeField"])

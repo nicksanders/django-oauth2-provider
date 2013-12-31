@@ -9,7 +9,6 @@ from ..scope import SCOPE_NAMES
 from ..utils import now
 from .models import Client, Grant, RefreshToken
 
-
 class ClientForm(forms.ModelForm):
     """
     Form to create new consumers.
@@ -44,13 +43,18 @@ class ClientAuthForm(forms.Form):
         data['client'] = client
         return data
 
-
-class ScopeChoiceField(forms.ChoiceField):
+class ScopeChoiceField(forms.TypedMultipleChoiceField):
     """
     Custom form field that seperates values on space as defined in
     :rfc:`3.3`.
     """
     widget = forms.SelectMultiple
+
+    def prepare_value(self, value):
+        prepared = super(ScopeChoiceField, self).prepare_value(value)
+        if isinstance(value, int):
+            return scope.decompose(prepared)
+        return prepared
 
     def to_python(self, value):
         if not value:
@@ -82,6 +86,8 @@ class ScopeChoiceField(forms.ChoiceField):
                     'error_description': _("'%s' is not a valid scope.") % \
                             val})
 
+    def _has_changed(self, initial, data):
+        return True
 
 class ScopeMixin(object):
     """
@@ -175,11 +181,8 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
     def clean_scope(self):
         cleaned_scope = super(AuthorizationRequestForm, self).clean_scope()
 
-        print self.client.allowed_scope
-        print cleaned_scope
-
         # All of the requested scopes must exist in the allowed scopes
-        if (self.client.allowed_scope & cleaned_scope) != cleaned_scope:
+        if (self.client.scope & cleaned_scope) != cleaned_scope:
             raise OAuthValidationError({
                 'error': 'invalid_scope',
                 'error_description': _("The requested scope is not allowed "
