@@ -77,7 +77,7 @@ class Client(models.Model):
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.URLField(help_text="Your application's callback URL")
     webhook_uri = models.URLField(help_text="Your application's webhook URL", null=True, blank=True)
-    logo = models.URLField(null=True, blank=True, help_text="40x40 pixel logo of your application")
+    logo = models.URLField(null=True, blank=True, help_text="80x80 pixel logo of your application")
     status = models.PositiveSmallIntegerField(max_length=2, choices=ClientStatus.CHOICES, default=1)
     last_updated_date = models.DateTimeField(auto_now=True)
     created_date = models.DateTimeField(auto_now_add=True)
