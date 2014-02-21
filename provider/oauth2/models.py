@@ -4,6 +4,7 @@ implement these models with fields and and methods to be compatible with the
 views in :attr:`provider.views`.
 """
 
+import os
 from django.db import models
 from django.conf import settings
 from .. import constants
@@ -54,6 +55,13 @@ class ScopeField(models.IntegerField):
     def __str__(self):
         return 'scope'
 
+def client_logo_image_path(instance, filename):
+    filename_split = os.path.splitext(filename)
+    ext = filename_split[1]
+    if not ext:
+        ext = '.png'
+    return '/'.join([constants.LOGO_STORAGE, instance.client_id, 'icon' + ext])
+
 class Client(models.Model):
     """
     Default client implementation.
@@ -77,7 +85,7 @@ class Client(models.Model):
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.URLField(help_text="Your application's callback URL")
     webhook_uri = models.URLField(help_text="Your application's webhook URL", null=True, blank=True)
-    logo = models.ImageField(upload_to=constants.LOGO_STORAGE, null=True, blank=True, help_text="40x40 pixel logo of your application")
+    logo = models.ImageField(upload_to=client_logo_image_path, null=True, blank=True, help_text="40x40 pixel logo of your application")
     status = models.PositiveSmallIntegerField(max_length=2, choices=ClientStatus.CHOICES, default=1)
     last_updated_date = models.DateTimeField(auto_now=True)
     created_date = models.DateTimeField(auto_now_add=True)
