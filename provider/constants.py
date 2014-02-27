@@ -41,4 +41,6 @@ SESSION_KEY = getattr(settings, 'OAUTH_SESSION_KEY', 'oauth')
 
 SINGLE_ACCESS_TOKEN = getattr(settings, 'OAUTH_SINGLE_ACCESS_TOKEN', False)
 
-LOGO_STORAGE = getattr(settings, 'OAUTH2_LOGO_STORAGE', 'logos')
+LOGO_FOLDER = getattr(settings, 'OAUTH2_LOGO_FOLDER', 'logos')
+
+IMAGE_STORAGE = getattr(settings, 'OAUTH2_IMAGE_STORAGE', None)
