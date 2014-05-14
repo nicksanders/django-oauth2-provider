@@ -2,11 +2,13 @@ import json
 import urlparse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
+from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
 from django.core.exceptions import ObjectDoesNotExist
 from oauth2.models import Client, ClientStatus
 from . import constants, scope
+from provider.oauth2.models import AccessToken as AccessTokenModel
 
 
 class OAuthError(Exception):
@@ -267,7 +269,25 @@ class Authorize(OAuthView, Mixin):
         authorization_form = self.get_authorization_form(request, client,
             post_data, data)
 
-        if not authorization_form.is_bound or not authorization_form.is_valid():
+        already_authorized = False
+        if post_data is None and request.user.is_authenticated():
+            already_authorized = \
+                AccessTokenModel.objects.filter(client=client,
+                                                   user=request.user,
+                                                   scope=data.get('scope'),
+                                                   expires__gte=now()).count() > 0
+            if already_authorized:
+                post_data = {
+                    'client_id': str(client.pk),
+                    'scope': ' '.join(scope.to_names(data.get('scope'))),
+                    'redirect_uri': data.get('redirect_uri'),
+                    'state': data.get('state'),
+                    'authorize': 'Non-empty'
+                }
+                authorization_form = self.get_authorization_form(request, client, post_data, data)
+                authorization_form.is_valid() # evaluate
+
+        if not already_authorized and not authorization_form.is_valid():
             return self.render_to_response({
                 'client': client,
                 'form': authorization_form,
