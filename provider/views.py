@@ -568,7 +568,7 @@ class AccessToken(OAuthView, Mixin):
             if client.client_type != 1:
                 rt = self.create_refresh_token(request, user, scope, at, client)
 
-        return self.add_allow_cors_header_to_response(request, self.access_token_response(at))
+        return self.access_token_response(at)
 
     def get_handler(self, grant_type):
         """
@@ -593,7 +593,7 @@ class AccessToken(OAuthView, Mixin):
             'error': 'invalid_request',
             'error_description': _("Only POST requests allowed.")})
 
-    def post(self, request):
+    def post_response(self, request):
         """
         As per :rfc:`3.2` the token endpoint *only* supports POST requests.
         """
@@ -624,6 +624,16 @@ class AccessToken(OAuthView, Mixin):
             return handler(request, request.POST, client)
         except OAuthError, e:
             return self.error_response(e.args[0])
+
+    def post(self, request):
+        response = self.post_response(request)
+
+        grant_type = request.POST.get('grant_type', None)
+
+        if grant_type == 'password':
+            return self.add_allow_cors_header_to_response(request, response)
+        else:
+            return response
 
     def options(self, request, *args, **kwargs):
         return self.add_allow_cors_header_to_response(request,
