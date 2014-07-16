@@ -43,6 +43,38 @@ class ClientAuthForm(forms.Form):
         data['client'] = client
         return data
 
+class PublicClientAuthForm(forms.Form):
+    """
+    Public client authentication form. Required to make sure that we're dealing with a
+    real client. Form is used in :attr:`provider.oauth2.backends` to validate
+    a public client.
+    """
+    client_id = forms.CharField(required=True)
+    grant_type = forms.CharField(required=True)
+
+    def clean_grant_type(self):
+        grant_type = self.cleaned_data.get('grant_type')
+
+        if grant_type != 'password':
+            raise OAuthValidationError({'error': 'invalid_grant'})
+
+        return grant_type
+
+    def clean(self):
+        data = self.cleaned_data
+
+        try:
+            client = Client.objects.get(client_id=data.get('client_id'))
+        except Client.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_client'})
+
+        if client.client_type != 1: # public
+            raise OAuthValidationError({'error': 'invalid_client'})
+
+        data['client'] = client
+        return data
+
+
 class ScopeChoiceField(forms.TypedMultipleChoiceField):
     """
     Custom form field that seperates values on space as defined in
@@ -318,34 +350,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
             password=data.get('password'))
 
         if user is None:
-            raise OAuthValidationError({'error': 'invalid_grant'})
+            raise OAuthValidationError({'error': 'invalid_credentials'})
 
         data['user'] = user
-        return data
-
-
-class PublicPasswordGrantForm(PasswordGrantForm):
-    client_id = forms.CharField(required=True)
-    grant_type = forms.CharField(required=True)
-
-    def clean_grant_type(self):
-        grant_type = self.cleaned_data.get('grant_type')
-
-        if grant_type != 'password':
-            raise OAuthValidationError({'error': 'invalid_grant'})
-
-        return grant_type
-
-    def clean(self):
-        data = super(PublicPasswordGrantForm, self).clean()
-
-        try:
-            client = Client.objects.get(client_id=data.get('client_id'))
-        except Client.DoesNotExist:
-            raise OAuthValidationError({'error': 'invalid_client'})
-
-        if client.client_type != 1: # public
-            raise OAuthValidationError({'error': 'invalid_client'})
-
-        data['client'] = client
         return data

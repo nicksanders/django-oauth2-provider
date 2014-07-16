@@ -556,7 +556,13 @@ class AccessToken(OAuthView, Mixin):
         Handle ``grant_type=password`` requests as defined in :rfc:`4.3`.
         """
 
-        data = self.get_password_grant(request, data, client)
+        try:
+            data = self.get_password_grant(request, data, client)
+        except OAuthError, e:
+            status = 400
+            if e.args[0]['error'] == 'invalid_credentials':
+                status = 401
+            return self.error_response(e.args[0], status=status)
         user = data.get('user')
         scope = data.get('scope')
 
@@ -616,7 +622,7 @@ class AccessToken(OAuthView, Mixin):
         client = self.authenticate(request)
 
         if client is None:
-            return self.error_response({'error': 'invalid_client'})
+            return self.error_response({'error': 'invalid_client'}, status=404)
 
         handler = self.get_handler(grant_type)
 

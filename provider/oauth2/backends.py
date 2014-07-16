@@ -1,5 +1,5 @@
 from ..utils import now
-from .forms import ClientAuthForm, PublicPasswordGrantForm
+from .forms import (ClientAuthForm, PublicClientAuthForm)
 from .models import AccessToken
 
 
@@ -74,7 +74,7 @@ class PublicPasswordBackend(object):
         if request is None:
             return None
 
-        form = PublicPasswordGrantForm(request.REQUEST)
+        form = PublicClientAuthForm(request.REQUEST)
 
         if form.is_valid():
             return form.cleaned_data.get('client')
