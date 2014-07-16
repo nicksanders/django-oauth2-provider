@@ -28,8 +28,8 @@ class ClientAuthForm(forms.Form):
     real client. Form is used in :attr:`provider.oauth2.backends` to validate
     the client.
     """
-    client_id = forms.CharField()
-    client_secret = forms.CharField()
+    client_id = forms.CharField(required=True)
+    client_secret = forms.CharField(required=True)
 
     def clean(self):
         data = self.cleaned_data
