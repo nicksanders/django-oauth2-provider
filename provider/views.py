@@ -562,6 +562,8 @@ class AccessToken(OAuthView, Mixin):
             status = 400
             if e.args[0]['error'] == 'invalid_credentials':
                 status = 401
+            elif e.args[0]['error'] == 'invalid_scope':
+                status = 403
             return self.error_response(e.args[0], status=status)
         user = data.get('user')
         scope = data.get('scope')
