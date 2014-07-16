@@ -135,9 +135,21 @@ class ScopeMixin(object):
         """
         default = 0
 
-        flags = self.cleaned_data.get('scope', [])
+        if not 'scope' in self.data:
+            return default
 
-        return scope.to_int(default=default, *flags)
+        flags = self.cleaned_data['scope']
+
+        cleaned_scope = scope.to_int(default=default, *flags)
+
+        # All of the requested scopes must exist in the allowed scopes
+        if self.client and scope.check(cleaned_scope, self.client.scope) != cleaned_scope:
+            raise OAuthValidationError({
+                'error': 'invalid_scope',
+                'error_description': _("The requested scope is not allowed "
+                    "for this client")
+            })
+        return cleaned_scope
 
 
 class AuthorizationRequestForm(ScopeMixin, OAuthForm):
@@ -209,17 +221,6 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
 
         return redirect_uri
 
-    def clean_scope(self):
-        cleaned_scope = super(AuthorizationRequestForm, self).clean_scope()
-
-        # All of the requested scopes must exist in the allowed scopes
-        if (self.client.scope & cleaned_scope) != cleaned_scope:
-            raise OAuthValidationError({
-                'error': 'invalid_scope',
-                'error_description': _("The requested scope is not allowed "
-                    "for this client")
-            })
-        return cleaned_scope
 
 class AuthorizationForm(ScopeMixin, OAuthForm):
     """
