@@ -143,7 +143,7 @@ class ScopeMixin(object):
         cleaned_scope = scope.to_int(default=default, *flags)
 
         # All of the requested scopes must exist in the allowed scopes
-        if self.client and scope.check(cleaned_scope, self.client.scope) != cleaned_scope:
+        if self.client and not scope.check(cleaned_scope, self.client.scope):
             raise OAuthValidationError({
                 'error': 'invalid_scope',
                 'error_description': _("The requested scope is not allowed "
