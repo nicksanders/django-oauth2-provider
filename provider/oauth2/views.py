@@ -95,9 +95,9 @@ class AccessTokenView(AccessTokenView):
     def get_access_token(self, request, user, scope, client):
         try:
             # Attempt to fetch an existing access token.
-            at = AccessToken.objects.get(user=user, client=client,
-                                         scope=scope, expires__gt=now())
-        except AccessToken.DoesNotExist:
+            at = AccessToken.objects.filter(user=user, client=client,
+                                            scope=scope, expires__gt=now())[0]
+        except IndexError:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
             self.create_refresh_token(request, user, scope, at, client)

@@ -56,7 +56,7 @@ class PublicClientAuthForm(forms.Form):
         grant_type = self.cleaned_data.get('grant_type')
 
         if grant_type != 'password':
-            raise OAuthValidationError({'error': 'invalid_grant'})
+            raise forms.ValidationError(_('Invalid grant type for public client'))
 
         return grant_type
 
@@ -66,10 +66,10 @@ class PublicClientAuthForm(forms.Form):
         try:
             client = Client.objects.get(client_id=data.get('client_id'))
         except Client.DoesNotExist:
-            raise OAuthValidationError({'error': 'invalid_client'})
+            raise forms.ValidationError(_('Client not found'))
 
         if client.client_type != 1: # public
-            raise OAuthValidationError({'error': 'invalid_client'})
+            raise forms.ValidationError(_('Invalid client type'))
 
         data['client'] = client
         return data
