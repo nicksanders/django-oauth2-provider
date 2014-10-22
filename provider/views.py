@@ -7,6 +7,7 @@ from django.views.generic.base import TemplateView
 from django.core.exceptions import ObjectDoesNotExist
 from oauth2.models import Client
 from . import constants, scope
+import json
 
 
 class OAuthError(Exception):
@@ -575,14 +576,19 @@ class AccessToken(OAuthView, Mixin):
             return self.error_response({
                 'error': 'invalid_request',
                 'error_description': _("A secure connection is required.")})
+        try:
+            param = json.loads(request.body)
+        except ValueError as e:
+            # If there is a error, the request is not in json
+            param = request.POST
 
-        if not 'grant_type' in request.POST:
+        if not 'grant_type' in param:
             return self.error_response({
                 'error': 'invalid_request',
                 'error_description': _("No 'grant_type' included in the "
                     "request.")})
 
-        grant_type = request.POST['grant_type']
+        grant_type = param['grant_type']
 
         if grant_type not in self.grant_types:
             return self.error_response({'error': 'unsupported_grant_type'})
@@ -595,6 +601,6 @@ class AccessToken(OAuthView, Mixin):
         handler = self.get_handler(grant_type)
 
         try:
-            return handler(request, request.POST, client)
+            return handler(request, param, client)
         except OAuthError, e:
             return self.error_response(e.args[0])

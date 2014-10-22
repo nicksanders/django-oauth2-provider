@@ -8,7 +8,7 @@ from .forms import AuthorizationRequestForm, AuthorizationForm
 from .forms import PasswordGrantForm, RefreshTokenGrantForm
 from .forms import AuthorizationCodeGrantForm
 from .models import Client, RefreshToken, AccessToken
-from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend
+from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend, PublicPasswordJsonBackend
 
 
 class Capture(Capture):
@@ -72,6 +72,7 @@ class AccessTokenView(AccessTokenView):
         BasicClientBackend,
         RequestParamsClientBackend,
         PublicPasswordBackend,
+        PublicPasswordJsonBackend,
     )
 
     def get_authorization_code_grant(self, request, data, client):

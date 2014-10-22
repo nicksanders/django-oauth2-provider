@@ -1,6 +1,7 @@
 from ..utils import now
 from .forms import ClientAuthForm, PublicPasswordGrantForm
 from .models import AccessToken
+import json
 
 
 class BaseBackend(object):
@@ -79,6 +80,20 @@ class PublicPasswordBackend(object):
         if form.is_valid():
             return form.cleaned_data.get('client')
 
+        return None
+
+class PublicPasswordJsonBackend(object):
+
+    def authenticate(self, request=None):
+        if request is None:
+            return None
+        try:
+            param = json.loads(request.body)
+        except ValueError:
+            return None
+        form = PublicPasswordGrantForm(param)
+        if form.is_valid():
+            return form.cleaned_data.get('client')
         return None
 
 
