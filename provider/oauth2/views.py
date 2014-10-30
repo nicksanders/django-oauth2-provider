@@ -1,7 +1,7 @@
 from datetime import timedelta
 from django.core.urlresolvers import reverse
 from .. import constants
-from ..views import Capture, Authorize, Redirect
+from ..views import Capture, Authorize, Redirect, OAuthView, Mixin
 from ..views import AccessToken as AccessTokenView, OAuthError
 from ..utils import now
 from .forms import AuthorizationRequestForm, AuthorizationForm
@@ -9,6 +9,8 @@ from .forms import PasswordGrantForm, RefreshTokenGrantForm
 from .forms import AuthorizationCodeGrantForm
 from .models import Client, RefreshToken, AccessToken
 from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend, PublicPasswordJsonBackend
+from django.http import HttpResponseForbidden, HttpResponse
+from ..utils import now
 
 
 class Capture(Capture):
@@ -138,3 +140,22 @@ class AccessTokenView(AccessTokenView):
         else:
             at.expires = now() - timedelta(days=1)
             at.save()
+
+
+# TODO this is a quick fix from rest_framework
+HTTP_HEADER_ENCODING = 'iso-8859-1'
+
+
+def revoke_token(request):
+    '''View to review the access token
+    '''
+    auth = request.META.get('HTTP_AUTHORIZATION', b'')
+    if isinstance(auth, type('')):
+        auth = auth.encode(HTTP_HEADER_ENCODING)
+    auth = auth.split(' ')
+    if len(auth) != 2:
+        return HttpResponseForbidden()
+    access_token = auth[1]
+    token = AccessToken.objects.get(token=access_token, expires__gt=now())
+    token.delete()
+    return HttpResponse()
