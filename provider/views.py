@@ -577,7 +577,10 @@ class AccessToken(OAuthView, Mixin):
                 'error': 'invalid_request',
                 'error_description': _("A secure connection is required.")})
         try:
-            param = json.loads(request.body)
+            data = request.body
+            if type(data) is bytes:
+                data = data.decode("utf-8")
+            param = json.loads(data)
         except ValueError as e:
             # If there is a error, the request is not in json
             param = request.POST

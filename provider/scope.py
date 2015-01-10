@@ -81,7 +81,7 @@ def to_names(scope):
 names = to_names
 
 
-def to_int(*names, **kwargs):
+def to_int(*names, default=0):
     """
     Turns a list of scope names into an integer value.
 
@@ -99,6 +99,6 @@ def to_int(*names, **kwargs):
         1
 
     """
-
-    return reduce(lambda prev, next: (prev | SCOPE_NAME_DICT.get(next, 0)),
-            names, kwargs.pop('default', 0))
+    for name in names:
+        default = default | SCOPE_NAME_DICT.get(name, 0)
+    return default

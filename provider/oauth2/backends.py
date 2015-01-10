@@ -88,7 +88,10 @@ class PublicPasswordJsonBackend(object):
         if request is None:
             return None
         try:
-            param = json.loads(request.body)
+            data = request.body
+            if type(data) is bytes:
+                data = data.decode("utf-8")
+            param = json.loads(data)
         except ValueError:
             return None
         form = PublicPasswordGrantForm(param)
