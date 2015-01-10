@@ -1,5 +1,5 @@
 import json
-import urlparse
+from urllib import parse as urlparse
 from django.http import HttpResponse
 from django.http import HttpResponseRedirect, QueryDict
 from django.utils.translation import ugettext as _
