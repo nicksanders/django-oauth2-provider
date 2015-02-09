@@ -55,7 +55,7 @@ class PublicClientAuthForm(forms.Form):
     def clean_grant_type(self):
         grant_type = self.cleaned_data.get('grant_type')
 
-        if grant_type != 'password':
+        if grant_type not in ['password', 'refresh_token']:
             raise forms.ValidationError(_('Invalid grant type for public client'))
 
         return grant_type
@@ -68,7 +68,7 @@ class PublicClientAuthForm(forms.Form):
         except Client.DoesNotExist:
             raise forms.ValidationError(_('Client not found'))
 
-        if client.client_type != 1: # public
+        if client.client_type != 1:  # public
             raise forms.ValidationError(_('Invalid client type'))
 
         data['client'] = client

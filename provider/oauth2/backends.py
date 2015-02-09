@@ -61,12 +61,12 @@ class RequestParamsClientBackend(object):
         return None
 
 
-class PublicPasswordBackend(object):
+class PublicClientBackend(object):
     """
-    Backend that tries to authenticate a client using username, password
-    and client ID. This is only available in specific circumstances:
+    Backend that tries to authenticate a client using client ID.
+    This is only available in specific circumstances:
 
-     - grant_type is "password"
+     - grant_type is "password" or "refresh_token"
      - client.client_type is 'public'
     """
 
