@@ -94,7 +94,7 @@ class Client(models.Model):
     created_date = models.DateTimeField(auto_now_add=True)
     client_id = models.CharField(max_length=255, default=short_token)
     client_secret = models.CharField(max_length=255, default=long_token)
-    client_type = models.IntegerField(choices=CLIENT_TYPES)
+    client_type = models.IntegerField(choices=CLIENT_TYPES, default=0)
     scope = ScopeField(default=0)
 
     def __unicode__(self):
