@@ -37,7 +37,7 @@ class ScopeField(models.IntegerField):
 
     def __init__(self, *args, **kwargs):
         kwargs['choices'] = scope.SCOPE_CHOICES
-        super(ScopeField, self).__init__(self, *args, **kwargs)
+        super(ScopeField, self).__init__(*args, **kwargs)
 
     def formfield(self, **kwargs):
         from .forms import ScopeChoiceField
