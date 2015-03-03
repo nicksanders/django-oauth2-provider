@@ -7,6 +7,7 @@ views in :attr:`provider.views`.
 import os
 from django.db import models
 from django.conf import settings
+from django.core.validators import RegexValidator
 from .. import constants
 from ..constants import CLIENT_TYPES
 from ..utils import now, short_token, long_token, get_code_expiry
@@ -83,7 +84,7 @@ class Client(models.Model):
         blank=True, null=True)
     name = models.CharField(max_length=255, blank=True)
     url = models.URLField(help_text="Your application's URL.")
-    redirect_uri = models.URLField(help_text="Your application's callback URL")
+    redirect_uri = models.CharField(max_length=1028, help_text="Your application's callback URL", validators=[RegexValidator(regex=r'^\S*//\S*$')])
     webhook_uri = models.URLField(help_text="Your application's webhook URL", null=True, blank=True)
     logo = models.ImageField(upload_to=client_logo_image_path,
                              null=True, blank=True,
