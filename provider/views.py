@@ -302,7 +302,9 @@ class Authorize(OAuthView, Mixin):
         self.cache_data(request, code, "code")
         self.cache_data(request, client.serialize(), "client")
 
-        return HttpResponseRedirect(self.get_redirect_url(request))
+        response = HttpResponse("", status=302)
+        response['Location'] = self.get_redirect_url(request)
+        return response
 
     def get(self, request):
         return self.handle(request, None)
