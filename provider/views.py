@@ -1,7 +1,7 @@
 import json
 import urlparse
 from django.http import HttpResponse
-from django.http import HttpResponseRedirect, QueryDict
+from django.http import QueryDict
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
@@ -110,7 +110,7 @@ class Capture(OAuthView, Mixin):
         Return a redirect to a URL where the resource owner (see :rfc:`1`)
         authorizes the client (also :rfc:`1`).
 
-        :return: :class:`django.http.HttpResponseRedirect`
+        :return: :class:`django.http.HttpResponse`
 
         """
         raise NotImplementedError
@@ -124,7 +124,9 @@ class Capture(OAuthView, Mixin):
                 'next': None},
                 status=400)
 
-        return HttpResponseRedirect(self.get_redirect_url(request))
+        response = HttpResponse("", status=302)
+        response['Location'] = self.get_redirect_url(request)
+        return response
 
     def get(self, request):
         return self.handle(request, request.GET)
@@ -368,7 +370,9 @@ class Redirect(OAuthView, Mixin):
 
         self.clear_data(request)
 
-        return HttpResponseRedirect(redirect_uri)
+        response = HttpResponse("", status=302)
+        response['Location'] = redirect_uri
+        return response
 
 
 class AccessToken(OAuthView, Mixin):
