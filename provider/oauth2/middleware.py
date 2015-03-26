@@ -36,6 +36,12 @@ def _get_user(request):
             pass
 
     if not oauth_token:
+        try:
+            oauth_token = request.COOKIES['at']
+        except KeyError:
+            pass
+
+    if not oauth_token:
         return AnonymousUser()
 
     try:
@@ -56,7 +62,7 @@ def get_user(request):
 
 
 class AuthenticationMiddleware(object):
-    '''
+    """
     Checks the incoming requests for a valid authentication mechanism.
     Authentication mechanisms allowed are (in order of preference):
     1. Header: "Authorization: token <OAUTH-TOKEN>"
@@ -64,9 +70,10 @@ class AuthenticationMiddleware(object):
     3. (Unsupported) Header: "Authorization: client_id <ID> client_secret <SECRET>" // public requests where user isn't
     required
     4. (Unsupported) Http params: "client_id=<ID>&client_secret=<SECRET>" // public requests where user isn't required
+    5. Cookie: at=<OAUTH-TOKEN>
 
     If a path requires an authenticated user, and none is presented, the method would return 401 access denied.
-    '''
+    """
 
     def process_request(self, request):
         request.user = SimpleLazyObject(lambda: get_user(request))
