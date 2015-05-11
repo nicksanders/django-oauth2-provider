@@ -184,11 +184,13 @@ class AccessToken(models.Model):
     * :meth:`get_expire_delta` - returns an integer representing seconds to
         expiry
     """
-    user = models.ForeignKey(AUTH_USER_MODEL)
+    user = models.ForeignKey(AUTH_USER_MODEL, null=True)
     token = models.CharField(max_length=255, default=long_token, db_index=True)
     client = models.ForeignKey(Client)
     expires = models.DateTimeField()
     scope = ScopeField(default=0)
+    type = models.IntegerField(default=0)
+    is_deleted = models.BooleanField(default=False)
 
     objects = AccessTokenManager()
 
