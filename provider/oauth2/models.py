@@ -85,7 +85,7 @@ class Client(models.Model):
     name = models.CharField(max_length=255, blank=True)
     url = models.URLField(help_text="Your application's URL.")
     redirect_uri = models.CharField(max_length=1028, help_text="Your application's callback URL", validators=[RegexValidator(regex=r'^\S*//\S*$')])
-    webhook_uri = models.URLField(help_text="Your application's webhook URL", null=True, blank=True)
+    webhook_uri = models.CharField(max_length=1028, help_text="Your application's webhook URL", null=True, blank=True, validators=[RegexValidator(regex=r'^\S*//\S*$')])
     logo = models.ImageField(upload_to=client_logo_image_path,
                              null=True, blank=True,
                              storage=constants.IMAGE_STORAGE,
