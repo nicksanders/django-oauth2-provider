@@ -108,13 +108,19 @@ class AccessTokenView(AccessTokenView):
     def get_access_token(self, request, user, scope, client, refreshable=True):
         try:
             # Attempt to fetch an existing access token.
-            at = AccessToken.objects.filter(user=user, client=client,
-                                            scope=scope, expires__gt=now())[0]
-        except IndexError:
+            at = AccessToken.objects.get(
+                user=user, client=client, scope=scope, expires__gt=now())
+        except AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
             if refreshable:
                 self.create_refresh_token(request, user, scope, at, client)
+        except AccessToken.MultipleObjectsReturned:
+            # Simultaneously created tokens must be destroyeds
+            at = AccessToken.objects.filter(
+                user=user, client=client, scope=scope, expires__gt=now()).latest("pk")
+            AccessToken.objects.filter(user=user, client=client,
+                                       scope=scope, expires__gt=now()).exclude(pk=at.pk).delete()
         return at
 
     def create_access_token(self, request, user, scope, client):

@@ -1,7 +1,9 @@
-# This imports might be a problem in python3. So just remove that.
-import backends
-import forms
-import managers
-import models
-import urls
-import views
+from __future__ import absolute_import
+from . import backends
+from . import forms
+from . import managers
+from . import models
+from . import urls
+from . import views
+
+default_app_config = 'provider.oauth2.apps.Oauth2'

@@ -124,6 +124,9 @@ class Client(models.Model):
         default=constants.CONFIDENTIAL)
     scope = ScopeField(default=0)
 
+    class Meta:
+        app_label = 'oauth2'
+
     def __str__(self):
         return self.redirect_uri
 
@@ -132,7 +135,7 @@ class Client(models.Model):
         return get_token_expiry(public)
 
     def serialize(self):
-        return dict(user=serialize_instance(self.user),
+        return dict(user=serialize_instance(self.user) if self.user else None,
                     name=self.name,
                     url=self.url,
                     redirect_uri=self.redirect_uri,
@@ -197,6 +200,9 @@ class Grant(models.Model):
     modified = models.DateTimeField(
         auto_now=True)
 
+    class Meta:
+        app_label = 'oauth2'
+
     def __str__(self):
         return self.code
 
@@ -244,6 +250,9 @@ class AccessToken(models.Model):
         auto_now=True)
 
     objects = AccessTokenManager()
+
+    class Meta:
+        app_label = 'oauth2'
 
     def __str__(self):
         return self.token
@@ -304,6 +313,9 @@ class RefreshToken(models.Model):
         auto_now_add=True)
     modified = models.DateTimeField(
         auto_now=True)
+
+    class Meta:
+        app_label = 'oauth2'
 
     def __str__(self):
         return self.token

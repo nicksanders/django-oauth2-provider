@@ -383,6 +383,8 @@ class Redirect(OAuthView, Mixin):
 
         parsed = urlparse.urlparse(redirect_uri)
 
+        # maybe it should looks like so??
+        #query = QueryDict(parsed[4], mutable=True)
         query = QueryDict('', mutable=True)
 
         if 'state' in data:
