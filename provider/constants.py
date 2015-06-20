@@ -20,7 +20,7 @@ READ_WRITE = READ | WRITE
 DEFAULT_SCOPES = (
     (READ, 'read', 'Read your data'),
     (WRITE, 'write', 'Write your data'),
-    (READ_WRITE, 'read+write'),
+    (READ_WRITE, 'read+write', 'Read & write your data'),
 )
 
 SCOPES = getattr(settings, 'OAUTH_SCOPES', DEFAULT_SCOPES)
