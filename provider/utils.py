@@ -1,17 +1,22 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import hashlib
 import shortuuid
 from datetime import datetime, tzinfo
+
 from django.conf import settings
-from django.utils import dateparse
+from django.core.serializers.json import DjangoJSONEncoder
 from django.db.models.fields import (DateTimeField, DateField,
                                      EmailField, TimeField,
                                      FieldDoesNotExist)
-from django.core.serializers.json import DjangoJSONEncoder
+from django.utils import dateparse
+
 from .constants import EXPIRE_DELTA, EXPIRE_DELTA_PUBLIC, EXPIRE_CODE_DELTA
 
 try:
     import json
-except ImporError:
+except ImportError:
     import simplejson as json
 
 try:
