@@ -1,8 +1,12 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.http.response import HttpResponse
 from django.utils.functional import SimpleLazyObject
 from django.utils.timezone import now
+
 from provider.oauth2.models import AccessToken
 
 __author__ = 'amaru'
