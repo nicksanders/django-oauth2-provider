@@ -117,6 +117,10 @@ class AccessTokenView(AccessTokenView):
             client=client
         )
 
+    def update_refresh_token(self, rt, at):
+        rt.access_token = at
+        rt.save()
+
     def invalidate_grant(self, grant):
         if constants.DELETE_EXPIRED:
             grant.delete()
@@ -130,6 +134,16 @@ class AccessTokenView(AccessTokenView):
         else:
             rt.expired = True
             rt.save()
+
+    def invalidate_refresh_tokens_over_limit(self, user, scope, client, limit):
+        if limit > 0:
+            rt_list = RefreshToken.objects.filter(
+                user=user,
+                client=client,
+                access_token__scope=scope,
+                expired=False).order_by('-pk')[limit:]
+            for rt in rt_list:
+                self.invalidate_refresh_token(rt)
 
     def invalidate_access_token(self, at):
         if constants.DELETE_EXPIRED:

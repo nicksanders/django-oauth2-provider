@@ -456,6 +456,148 @@ class AccessTokenTest(BaseOAuth2TestCase):
         token = self._login_authorize_get_token()
         self.assertEqual(token['token_type'], constants.TOKEN_TYPE, token)
 
+    def test_limit_number_of_refresh_token_grant(self):
+        constants.LIMIT_NUM_REFRESH_TOKEN = 2
+
+        token = self._login_authorize_get_token()
+        refresh_token_1 = token['refresh_token']
+
+        token = self._login_authorize_get_token()
+        refresh_token_2 = token['refresh_token']
+
+        token = self._login_authorize_get_token()
+        refresh_token_3 = token['refresh_token']
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token_1,
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('invalid_grant', json.loads(response.content)['error'],
+            response.content)
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token_2,
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        self.assertEqual(200, response.status_code)
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token_3,
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        self.assertEqual(200, response.status_code)
+
+        constants.LIMIT_NUM_REFRESH_TOKEN = 0
+
+    def test_limit_number_of_refresh_token_password(self):
+        constants.LIMIT_NUM_REFRESH_TOKEN = 2
+
+        c = self.get_client()
+        c.client_type = 0 # confidential
+        c.save()
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': c.client_id,
+            'client_secret': c.client_secret,
+            'username': self.get_user().username,
+            'password': self.get_password(),
+        })
+
+        self.assertEqual(200, response.status_code, response.content)
+        self.assertTrue(json.loads(response.content)['refresh_token'])
+        refresh_token_1 = json.loads(response.content)['refresh_token']
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': c.client_id,
+            'client_secret': c.client_secret,
+            'username': self.get_user().username,
+            'password': self.get_password(),
+        })
+
+        self.assertEqual(200, response.status_code, response.content)
+        self.assertTrue(json.loads(response.content)['refresh_token'])
+        refresh_token_2 = json.loads(response.content)['refresh_token']
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'password',
+            'client_id': c.client_id,
+            'client_secret': c.client_secret,
+            'username': self.get_user().username,
+            'password': self.get_password(),
+        })
+
+        self.assertEqual(200, response.status_code, response.content)
+        self.assertTrue(json.loads(response.content)['refresh_token'])
+        refresh_token_3 = json.loads(response.content)['refresh_token']
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token_1,
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        self.assertEqual(400, response.status_code)
+        self.assertEqual('invalid_grant', json.loads(response.content)['error'],
+            response.content)
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token_2,
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        self.assertEqual(200, response.status_code)
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token_3,
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        self.assertEqual(200, response.status_code)
+
+        constants.LIMIT_NUM_REFRESH_TOKEN = 0
+
+    def test_keeping_refresh_token(self):
+        constants.KEEP_REFRESH_TOKEN = True
+
+        token = self._login_authorize_get_token()
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': token['refresh_token'],
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        self.assertEqual(200, response.status_code)
+
+        response = self.client.post(self.access_token_url(), {
+            'grant_type': 'refresh_token',
+            'refresh_token': token['refresh_token'],
+            'client_id': self.get_client().client_id,
+            'client_secret': self.get_client().client_secret,
+        })
+
+        self.assertEqual(200, response.status_code)
+
+        constants.KEEP_REFRESH_TOKEN = False
+
 
 class AuthBackendTest(BaseOAuth2TestCase):
     fixtures = ['test_oauth2']

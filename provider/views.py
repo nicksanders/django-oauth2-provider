@@ -466,6 +466,15 @@ class AccessToken(OAuthView, Mixin):
         """
         raise NotImplementedError
 
+    def update_refresh_token(self, refresh_token, access_token):
+        """
+        Override to handle refresh token updating. Bind the access token to
+        the refresh token.
+
+        :return None:
+        """
+        raise NotImplementedError
+
     def invalidate_grant(self, grant):
         """
         Override to handle grant invalidation. A grant is invalidated right
@@ -479,6 +488,16 @@ class AccessToken(OAuthView, Mixin):
         """
         Override to handle refresh token invalidation. When requesting a new
         access token from a refresh token, the old one is *always* invalidated.
+
+        :return None:
+        """
+        raise NotImplementedError
+
+    def invalidate_refresh_tokens_over_limit(self, user, scope, client, limit):
+        """
+        Override to handle refresh tokens invalidation to comply the limits.
+        When limit number of refresh token is enabled, invalidate the oldest
+        refresh tokens to comply with the limits.
 
         :return None:
         """
@@ -535,8 +554,10 @@ class AccessToken(OAuthView, Mixin):
             at = self.get_access_token(request, grant.user, grant.scope, client)
         else:
             at = self.create_access_token(request, grant.user, grant.scope, client)
-            rt = self.create_refresh_token(request, grant.user, grant.scope, at,
-                    client)
+            rt = self.create_refresh_token(request, grant.user, grant.scope, at, client)
+            if constants.LIMIT_NUM_REFRESH_TOKEN > 0:
+                self.invalidate_refresh_tokens_over_limit(
+                    grant.user, grant.scope, client, constants.LIMIT_NUM_REFRESH_TOKEN)
 
         self.invalidate_grant(grant)
 
@@ -549,12 +570,16 @@ class AccessToken(OAuthView, Mixin):
         rt = self.get_refresh_token_grant(request, data, client)
 
         # this must be called first in case we need to purge expired tokens
-        self.invalidate_refresh_token(rt)
+        if not constants.KEEP_REFRESH_TOKEN:
+            self.invalidate_refresh_token(rt)
         self.invalidate_access_token(rt.access_token)
 
         at = self.create_access_token(request, rt.user, rt.access_token.scope,
                 client)
-        rt = self.create_refresh_token(request, at.user, at.scope, at, client)
+        if not constants.KEEP_REFRESH_TOKEN:
+            rt = self.create_refresh_token(request, at.user, at.scope, at, client)
+        else:
+            self.update_refresh_token(rt, at)
 
         return self.access_token_response(at)
 
@@ -582,6 +607,9 @@ class AccessToken(OAuthView, Mixin):
             # Public clients don't get refresh tokens
             if client.client_type != 1:
                 rt = self.create_refresh_token(request, user, scope, at, client)
+                if constants.LIMIT_NUM_REFRESH_TOKEN > 0:
+                    self.invalidate_refresh_tokens_over_limit(
+                        user, scope, client, constants.LIMIT_NUM_REFRESH_TOKEN)
 
         return self.access_token_response(at)
 
