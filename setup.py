@@ -24,6 +24,9 @@ setup(
         "shortuuid>=0.3",
         "pillow>=2.0.0"
     ],
+    test_requires=[
+        "mock>=1.0.1",
+    ],
     include_package_data=True,
     zip_safe=False,
 )

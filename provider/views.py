@@ -2,7 +2,7 @@
 from __future__ import unicode_literals
 import json
 import urlparse
-
+import logging
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse, QueryDict
@@ -14,6 +14,11 @@ from oauth2.models import Client, ClientStatus
 from . import constants, scope
 from provider.compat.http import JsonResponse
 from provider.oauth2.models import AccessToken as AccessTokenModel
+
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.ERROR)
 
 
 class OAuthError(Exception):
@@ -270,7 +275,24 @@ class Authorize(OAuthView, Mixin):
 
         try:
             client, data = self._validate_client(request, data)
-        except OAuthError, e:
+        except OAuthError as e:
+            form_errors = e.args[0]
+            if 'error' not in form_errors:
+                new_error = None
+                for err, desc in form_errors.iteritems():
+                    if err in ['redirect_uri', 'unauthorized_client']:
+                        new_error = OAuthError({
+                            'error': err,
+                            'error_description': _(desc[0])
+                        })
+                        break
+                if new_error is None:
+                    logger.exception(e)
+                    new_error = OAuthError({
+                        'error': 'unknown_error',
+                        'error_description': _(form_errors.items()[0][1])
+                    })
+                e = new_error
             return self.error_response(request, e.args[0], status=400)
 
         authorization_form = self.get_authorization_form(request, client,
@@ -342,7 +364,12 @@ class Redirect(OAuthView, Mixin):
         client = self.get_data(request, "client")
 
         # client must be properly deserialized to become a valid instance
-        client = Client.deserialize(client)
+        # but only if it has been serialized in the first place
+        try:
+            client = Client.deserialize(client)
+        except:
+            if not isinstance(client, Client):
+                raise
 
         # this is an edge case that is caused by making a request with no data
         # it should only happen if this view is called manually, out of the
@@ -352,7 +379,7 @@ class Redirect(OAuthView, Mixin):
                 'error': 'invalid_data',
                 'error_description': _('Data has not been captured')})
 
-        redirect_uri = data.get('redirect_uri', None) or client.redirect_uri
+        redirect_uri = data.get('redirect_uri', None) or client.redirect_uri.split(" ")[0]
 
         parsed = urlparse.urlparse(redirect_uri)
 
@@ -413,7 +440,8 @@ class AccessToken(OAuthView, Mixin):
     Authentication backends used to authenticate a particular client.
     """
 
-    grant_types = ['authorization_code', 'refresh_token', 'password', 'email_and_password']
+    grant_types = ['authorization_code', 'refresh_token', 'password',
+                   'email_and_password', 'client_credentials']
     """
     The default grant types supported by this view.
     """
@@ -439,6 +467,13 @@ class AccessToken(OAuthView, Mixin):
         Return a user associated with this request or an error dict.
 
         :return: ``tuple`` - ``(True or False, user or error_dict)``
+        """
+        raise NotImplementedError
+
+    def get_client_credentials_grant(self, request, data, client):
+        """
+        Return the optional parameters (scope) associated with this request.
+        :return: ``tuple`` - ``(True or False, options)``
         """
         raise NotImplementedError
 
@@ -605,7 +640,7 @@ class AccessToken(OAuthView, Mixin):
         else:
             at = self.create_access_token(request, user, scope, client)
             # Public clients don't get refresh tokens
-            if client.client_type != 1:
+            if client.client_type == constants.CONFIDENTIAL:
                 rt = self.create_refresh_token(request, user, scope, at, client)
                 if constants.LIMIT_NUM_REFRESH_TOKEN > 0:
                     self.invalidate_refresh_tokens_over_limit(
@@ -627,8 +662,26 @@ class AccessToken(OAuthView, Mixin):
         else:
             at = self.create_access_token(request, user, scope, client)
             # Public clients don't get refresh tokens
-            if client.client_type != 1:
+            if client.client_type == constants.CONFIDENTIAL:
                 rt = self.create_refresh_token(request, user, scope, at, client)
+
+        return self.access_token_response(at)
+
+    def client_credentials(self, request, data, client):
+        """
+        Handle ``grant_type=client_credentials`` requests as defined in
+        :rfc:`4.4`.
+        """
+        data = self.get_client_credentials_grant(request, data, client)
+        scope = data.get('scope')
+
+        # Client credentials should operate on public data and the
+        # client only -- exposing the user has the potential to compromise
+        # other assets associated with the user but not necessarily the client
+        if constants.SINGLE_ACCESS_TOKEN:
+            at = self.get_access_token(request, None, scope, client, refreshable=False)
+        else:
+            at = self.create_access_token(request, None, scope, client)
 
         return self.access_token_response(at)
 
@@ -646,6 +699,8 @@ class AccessToken(OAuthView, Mixin):
             return self.password
         elif grant_type == 'email_and_password':
             return self.email_and_password
+        elif grant_type == 'client_credentials':
+            return self.client_credentials
         return None
 
     def get(self, request):

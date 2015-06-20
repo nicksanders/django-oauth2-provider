@@ -11,20 +11,16 @@ import os
 from django.conf import settings
 from django.core.validators import RegexValidator
 from django.db import models
+from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 from django.utils.translation import ugettext_lazy as _
 
 from .. import constants, scope
-from ..constants import CLIENT_TYPES
+from ..validators import validate_uris
 from ..utils import (
     now, short_token, long_token, get_code_expiry, get_token_expiry,
     serialize_instance, deserialize_instance)
 from .managers import AccessTokenManager
-
-try:
-    from django.utils import timezone
-except ImportError:
-    timezone = None
 
 AUTH_USER_MODEL = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 
@@ -95,10 +91,10 @@ class Client(models.Model):
         blank=True)
     url = models.URLField(
         help_text=_("Your application's URL."))
-    redirect_uri = models.CharField(
+    redirect_uri = models.TextField(
         max_length=1028,
         help_text=_("Your application's callback URL"),
-        validators=[RegexValidator(regex=r'^\S*//\S*$')])
+        validators=[validate_uris])
     webhook_uri = models.CharField(
         max_length=1028,
         help_text=_("Your application's webhook URL"),
@@ -124,7 +120,7 @@ class Client(models.Model):
         max_length=255,
         default=long_token)
     client_type = models.IntegerField(
-        choices=CLIENT_TYPES,
+        choices=constants.CLIENT_TYPES,
         default=constants.CONFIDENTIAL)
     scope = ScopeField(default=0)
 
@@ -183,7 +179,8 @@ class Grant(models.Model):
     * :attr:`scope`
     """
     user = models.ForeignKey(
-        AUTH_USER_MODEL)
+        AUTH_USER_MODEL,
+        blank=True, null=True)
     client = models.ForeignKey(
         Client)
     code = models.CharField(
@@ -195,6 +192,10 @@ class Grant(models.Model):
         max_length=255,
         blank=True)
     scope = ScopeField(default=0)
+    created = models.DateTimeField(
+        auto_now_add=True)
+    modified = models.DateTimeField(
+        auto_now=True)
 
     def __str__(self):
         return self.code
@@ -223,7 +224,7 @@ class AccessToken(models.Model):
     """
     user = models.ForeignKey(
         AUTH_USER_MODEL,
-        null=True)
+        null=True, blank=True)
     token = models.CharField(
         max_length=255,
         default=long_token,
@@ -237,6 +238,10 @@ class AccessToken(models.Model):
         default=0)
     is_deleted = models.BooleanField(
         default=False)
+    created = models.DateTimeField(
+        auto_now_add=True)
+    modified = models.DateTimeField(
+        auto_now=True)
 
     objects = AccessTokenManager()
 
@@ -283,7 +288,8 @@ class RefreshToken(models.Model):
     * :attr:`expired` - ``boolean``
     """
     user = models.ForeignKey(
-        AUTH_USER_MODEL)
+        AUTH_USER_MODEL,
+        blank=True, null=True)
     token = models.CharField(
         max_length=255,
         default=long_token)
@@ -294,6 +300,10 @@ class RefreshToken(models.Model):
         Client)
     expired = models.BooleanField(
         default=False)
+    created = models.DateTimeField(
+        auto_now_add=True)
+    modified = models.DateTimeField(
+        auto_now=True)
 
     def __str__(self):
         return self.token

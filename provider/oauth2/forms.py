@@ -10,7 +10,6 @@ from .. import scope
 from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
 from ..compat import get_user_model
 from ..forms import OAuthForm, OAuthValidationError
-from ..scope import SCOPE_NAMES
 from ..utils import now
 from .models import Client, Grant, RefreshToken
 
@@ -184,7 +183,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
     Opaque - just pass back to the client for validation.
     """
 
-    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+    scope = ScopeChoiceField(choices=scope.SCOPE_NAMES, required=False)
     """
     The scope that the authorization should include.
     """
@@ -217,7 +216,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
         redirect_uri = self.cleaned_data.get('redirect_uri')
 
         if redirect_uri:
-            if not redirect_uri == self.client.redirect_uri:
+            if redirect_uri not in self.client.redirect_uri.split(" "):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
                     'error_description': _("The requested redirect didn't "
@@ -231,7 +230,7 @@ class AuthorizationForm(ScopeMixin, OAuthForm):
     A form used to ask the resource owner for authorization of a given client.
     """
     authorize = forms.BooleanField(required=False)
-    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+    scope = ScopeChoiceField(choices=scope.SCOPE_NAMES, required=False)
 
     def save(self, **kwargs):
         authorize = self.cleaned_data.get('authorize')
@@ -249,7 +248,7 @@ class RefreshTokenGrantForm(ScopeMixin, OAuthForm):
     Checks and returns a refresh token.
     """
     refresh_token = forms.CharField(required=False)
-    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+    scope = ScopeChoiceField(choices=scope.SCOPE_NAMES, required=False)
 
     def clean_refresh_token(self):
         token = self.cleaned_data.get('refresh_token')
@@ -290,7 +289,7 @@ class AuthorizationCodeGrantForm(ScopeMixin, OAuthForm):
     Check and return an authorization grant.
     """
     code = forms.CharField(required=False)
-    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+    scope = ScopeChoiceField(choices=scope.SCOPE_NAMES, required=False)
 
     def clean_code(self):
         code = self.cleaned_data.get('code')
@@ -330,7 +329,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
     """
     username = forms.CharField(required=False)
     password = forms.CharField(required=False)
-    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+    scope = ScopeChoiceField(choices=scope.SCOPE_NAMES, required=False)
 
     def clean_username(self):
         username = self.cleaned_data.get('username')
@@ -355,7 +354,7 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
             password=data.get('password'))
 
         if user is None:
-            raise OAuthValidationError({'error': 'invalid_credentials'})
+            raise OAuthValidationError({'error': 'authentication_failed'})
 
         data['user'] = user
         return data
@@ -370,7 +369,7 @@ class EmailAndPasswordGrantForm(ScopeMixin, OAuthForm):
     email = forms.CharField(required=False)
     username = forms.CharField(required=False)
     password = forms.CharField(required=False)
-    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+    scope = ScopeChoiceField(choices=scope.SCOPE_NAMES, required=False)
 
     def clean_username(self):
         email = self.cleaned_data.get('email')
@@ -432,3 +431,11 @@ class PublicPasswordGrantForm(PasswordGrantForm):
 
         data['client'] = client
         return data
+
+
+
+class ClientCredentialsGrantForm(ScopeMixin, OAuthForm):
+    """
+    Validate a client credentials grant request.
+    """
+    scope = ScopeChoiceField(choices=scope.SCOPE_NAMES, required=False)
