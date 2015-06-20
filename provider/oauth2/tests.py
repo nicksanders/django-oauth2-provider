@@ -1,20 +1,24 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 import json
 import urlparse
 import datetime
-from django.http import QueryDict
+
 from django.conf import settings
-from django.core.urlresolvers import reverse
-from django.utils.html import escape
-from django.test import TestCase
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
+from django.http import QueryDict
+from django.test import TestCase
+from django.utils.html import escape
+
 from .. import constants, scope
 from ..compat import skipIfCustomUser
 from ..templatetags.scope import scopes
 from ..utils import now as date_now
 from .forms import ClientForm
 from .models import Client, Grant, AccessToken, RefreshToken
-from .backends import BasicClientBackend, RequestParamsClientBackend
-from .backends import AccessTokenBackend
+from .backends import BasicClientBackend, RequestParamsClientBackend, AccessTokenBackend
 
 
 @skipIfCustomUser
@@ -48,7 +52,7 @@ class BaseOAuth2TestCase(TestCase):
 
     def _login_and_authorize(self, url_func=None):
         if url_func is None:
-            url_func = lambda: self.auth_url() + '?client_id=%s&response_type=code&state=abc' % self.get_client().client_id
+            url_func = lambda: self.auth_url() + '?client_id={}&response_type=code&state=abc'.format(self.get_client().client_id)
 
         response = self.client.get(url_func())
         response = self.client.get(self.auth_url2())
@@ -101,40 +105,40 @@ class AuthorizationTest(BaseOAuth2TestCase):
 
     def test_authorization_requires_response_type(self):
         self.login()
-        response = self.client.get(self.auth_url() + '?client_id=%s' % self.get_client().client_id)
+        response = self.client.get(self.auth_url() + '?client_id={}'.format(self.get_client().client_id))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"No 'response_type' supplied.") in response.content)
+        self.assertTrue(escape("No 'response_type' supplied.") in response.content)
 
     def test_authorization_requires_supported_response_type(self):
         self.login()
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=unsupported' % self.get_client().client_id)
+        response = self.client.get(self.auth_url() + '?client_id={}&response_type=unsupported'.format(self.get_client().client_id))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'unsupported' is not a supported response type.") in response.content)
+        self.assertTrue(escape("'unsupported' is not a supported response type.") in response.content)
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
+        response = self.client.get(self.auth_url() + '?client_id={}&response_type=code'.format(self.get_client().client_id))
         response = self.client.get(self.auth_url2())
         self.assertEqual(200, response.status_code, response.content)
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=token' % self.get_client().client_id)
+        response = self.client.get(self.auth_url() + '?client_id={}&response_type=token'.format(self.get_client().client_id))
         response = self.client.get(self.auth_url2())
         self.assertEqual(200, response.status_code)
 
     def test_authorization_requires_a_valid_redirect_uri(self):
         self.login()
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
+        response = self.client.get(self.auth_url() + '?client_id={}&response_type=code&redirect_uri={}'.format(
             self.get_client().client_id,
             self.get_client().redirect_uri + '-invalid'))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"The requested redirect didn't match the client settings.") in response.content)
+        self.assertTrue(escape("The requested redirect didn't match the client settings.") in response.content)
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&redirect_uri=%s' % (
+        response = self.client.get(self.auth_url() + '?client_id={}&response_type=code&redirect_uri={}'.format(
             self.get_client().client_id,
             self.get_client().redirect_uri))
         response = self.client.get(self.auth_url2())
@@ -144,13 +148,13 @@ class AuthorizationTest(BaseOAuth2TestCase):
     def test_authorization_requires_a_valid_scope(self):
         self.login()
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=invalid+invalid2' % self.get_client().client_id)
+        response = self.client.get(self.auth_url() + '?client_id={}&response_type=code&scope=invalid+invalid2'.format(self.get_client().client_id))
         response = self.client.get(self.auth_url2())
 
         self.assertEqual(400, response.status_code)
-        self.assertTrue(escape(u"'invalid' is not a valid scope.") in response.content)
+        self.assertTrue(escape("'invalid' is not a valid scope.") in response.content)
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code&scope=%s' % (
+        response = self.client.get(self.auth_url() + '?client_id={}&response_type=code&scope={}'.format(
             self.get_client().client_id,
             constants.SCOPES[0][1]))
         response = self.client.get(self.auth_url2())
@@ -159,7 +163,7 @@ class AuthorizationTest(BaseOAuth2TestCase):
     def test_authorization_is_not_granted(self):
         self.login()
 
-        response = self.client.get(self.auth_url() + '?client_id=%s&response_type=code' % self.get_client().client_id)
+        response = self.client.get(self.auth_url() + '?client_id={}&response_type=code'.format(self.get_client().client_id))
         response = self.client.get(self.auth_url2())
 
         response = self.client.post(self.auth_url2(), {'authorize': False, 'scope': constants.SCOPES[0][1]})
@@ -260,7 +264,7 @@ class AccessTokenTest(BaseOAuth2TestCase):
 
         for prop in required_props:
             self.assertIn(prop, token, "Access token response missing "
-                    "required property: %s" % prop)
+                    "required property: {}".format(prop))
 
         return token
 

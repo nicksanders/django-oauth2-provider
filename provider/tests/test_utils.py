@@ -1,10 +1,11 @@
-"""
-Test cases for functionality provided by the provider.utils module
-"""
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 from datetime import datetime, time, date
-from django.test import TestCase
+
 from django.db import models
+from django.test import TestCase
+
 from .. import utils
 
 
