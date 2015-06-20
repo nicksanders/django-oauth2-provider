@@ -1,13 +1,18 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
+
 from django import forms
 from django.contrib.auth import authenticate
-from django.utils.encoding import smart_unicode
+from django.utils.encoding import smart_text
 from django.utils.translation import ugettext as _
+
 from .. import scope
 from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
 from ..forms import OAuthForm, OAuthValidationError
 from ..scope import SCOPE_NAMES
 from ..utils import now
 from .models import Client, Grant, RefreshToken
+
 
 class ClientForm(forms.ModelForm):
     """
@@ -101,7 +106,7 @@ class ScopeChoiceField(forms.TypedMultipleChoiceField):
             value = value.split(' ')
 
         # Split values into list
-        return u' '.join([smart_unicode(val) for val in value]).split(u' ')
+        return ' '.join([smart_text(val) for val in value]).split(' ')
 
     def validate(self, value):
         """
@@ -115,8 +120,7 @@ class ScopeChoiceField(forms.TypedMultipleChoiceField):
             if not self.valid_value(val):
                 raise OAuthValidationError({
                     'error': 'invalid_request',
-                    'error_description': _("'%s' is not a valid scope.") % \
-                            val})
+                    'error_description': _("'{}' is not a valid scope.").format(val)})
 
     def _has_changed(self, initial, data):
         return True
@@ -200,8 +204,7 @@ class AuthorizationRequestForm(ScopeMixin, OAuthForm):
             if type not in RESPONSE_TYPE_CHOICES:
                 raise OAuthValidationError({
                     'error': 'unsupported_response_type',
-                    'error_description': u"'%s' is not a supported response "
-                        "type." % type})
+                    'error_description': "'{}' is not a supported response type.".format(type)})
 
         return response_type
 
