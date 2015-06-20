@@ -8,6 +8,7 @@ from django.utils.translation import ugettext as _
 
 from .. import scope
 from ..constants import RESPONSE_TYPE_CHOICES, SCOPES
+from ..compat import get_user_model
 from ..forms import OAuthForm, OAuthValidationError
 from ..scope import SCOPE_NAMES
 from ..utils import now
@@ -357,4 +358,77 @@ class PasswordGrantForm(ScopeMixin, OAuthForm):
             raise OAuthValidationError({'error': 'invalid_credentials'})
 
         data['user'] = user
+        return data
+
+
+class EmailAndPasswordGrantForm(ScopeMixin, OAuthForm):
+    """
+    Validate the password of a user on a email_and_password grant
+    request. Modified from PasswordGrantForm to use email addresses
+    in place of usernames.
+    """
+    email = forms.CharField(required=False)
+    username = forms.CharField(required=False)
+    password = forms.CharField(required=False)
+    scope = ScopeChoiceField(choices=SCOPE_NAMES, required=False)
+
+    def clean_username(self):
+        email = self.cleaned_data.get('email')
+
+        if not email:
+            raise OAuthValidationError({'error': 'invalid_request'})
+
+        User = get_user_model()
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_request'})
+
+        return user.username
+
+    def clean_password(self):
+        password = self.cleaned_data.get('password')
+
+        if not password:
+            raise OAuthValidationError({'error': 'invalid_request'})
+
+        return password
+
+    def clean(self):
+        data = self.cleaned_data
+
+        user = authenticate(username=data.get('username'),
+            password=data.get('password'))
+
+        if user is None:
+            raise OAuthValidationError({'error': 'invalid_grant'})
+
+        data['user'] = user
+        return data
+
+
+class PublicPasswordGrantForm(PasswordGrantForm):
+    client_id = forms.CharField(required=True)
+    grant_type = forms.CharField(required=True)
+
+    def clean_grant_type(self):
+        grant_type = self.cleaned_data.get('grant_type')
+
+        if grant_type != 'password':
+            raise OAuthValidationError({'error': 'invalid_grant'})
+
+        return grant_type
+
+    def clean(self):
+        data = super(PublicPasswordGrantForm, self).clean()
+
+        try:
+            client = Client.objects.get(client_id=data.get('client_id'))
+        except Client.DoesNotExist:
+            raise OAuthValidationError({'error': 'invalid_client'})
+
+        if client.client_type != 1: # public
+            raise OAuthValidationError({'error': 'invalid_client'})
+
+        data['client'] = client
         return data
