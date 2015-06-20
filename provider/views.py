@@ -1,13 +1,18 @@
+# -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 import json
 import urlparse
-from django.http import HttpResponse
-from django.http import QueryDict
+
+
+from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse, QueryDict
 from django.utils.timezone import now
 from django.utils.translation import ugettext as _
 from django.views.generic.base import TemplateView
-from django.core.exceptions import ObjectDoesNotExist
+
 from oauth2.models import Client, ClientStatus
 from . import constants, scope
+from provider.compat.http import JsonResponse
 from provider.oauth2.models import AccessToken as AccessTokenModel
 
 
@@ -57,7 +62,7 @@ class Mixin(object):
 
         :param key: `str` The key under which the data was stored.
         """
-        return request.session.get('%s:%s' % (constants.SESSION_KEY, key))
+        return request.session.get('{}:{}'.format(constants.SESSION_KEY, key))
 
     def cache_data(self, request, data, key='params'):
         """
@@ -67,7 +72,7 @@ class Mixin(object):
         :param data: Arbitrary data to store.
         :param key: `str` The key under which to store the data.
         """
-        request.session['%s:%s' % (constants.SESSION_KEY, key)] = data
+        request.session['{}:{}'.format(constants.SESSION_KEY, key)] = data
 
     def clear_data(self, request):
         """
@@ -328,8 +333,7 @@ class Redirect(OAuthView, Mixin):
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), content_type=content_type,
-                status=status, **kwargs)
+        return JsonResponse(error, status=status, **kwargs)
 
     def get(self, request):
         data = self.get_data(request)
@@ -495,8 +499,7 @@ class AccessToken(OAuthView, Mixin):
         Return an error response to the client with default status code of
         *400* stating the error as outlined in :rfc:`5.2`.
         """
-        return HttpResponse(json.dumps(error), content_type=content_type,
-                status=status, **kwargs)
+        return JsonResponse(error, status=status, **kwargs)
 
     def access_token_response(self, access_token):
         """
@@ -519,9 +522,7 @@ class AccessToken(OAuthView, Mixin):
         except ObjectDoesNotExist:
             pass
 
-        return HttpResponse(
-            json.dumps(response_data), content_type='application/json'
-        )
+        return JsonResponse(response_data)
 
     def authorization_code(self, request, data, client):
         """
