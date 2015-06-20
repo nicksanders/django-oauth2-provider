@@ -2,8 +2,12 @@
 from __future__ import unicode_literals
 
 import json
-import urlparse
 import datetime
+
+try:
+    import urlparse
+except ImportError:
+    from urllib import parse as urlparse
 
 from django.conf import settings
 from django.contrib.auth.models import User
