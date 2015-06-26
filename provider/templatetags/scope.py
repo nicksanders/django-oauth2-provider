@@ -11,3 +11,10 @@ def scopes(scope_int):
     of scope names in templates.
     """
     return scope.to_names(scope_int)
+
+@register.filter
+def scope_verbose(scope_name):
+    """
+    Get verbose name of a scope
+    """
+    return scope.SCOPE_VERBOSE_DICT[scope_name]

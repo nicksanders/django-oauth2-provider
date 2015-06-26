@@ -1,14 +1,15 @@
 from datetime import timedelta
 from django.core.urlresolvers import reverse
 from .. import constants
-from ..views import Capture, Authorize, Redirect, OAuthView, Mixin
-from ..views import AccessToken as AccessTokenView, OAuthError
+from ..views import (
+    Capture, Authorize, Redirect, AccessToken as AccessTokenView, OAuthError)
 from ..utils import now
-from .forms import AuthorizationRequestForm, AuthorizationForm
-from .forms import PasswordGrantForm, RefreshTokenGrantForm
-from .forms import AuthorizationCodeGrantForm
+from .forms import (
+    AuthorizationCodeGrantForm, PasswordGrantForm, EmailAndPasswordGrantForm,
+    RefreshTokenGrantForm, AuthorizationRequestForm, AuthorizationForm,
+    ClientCredentialsGrantForm)
 from .models import Client, RefreshToken, AccessToken
-from .backends import BasicClientBackend, RequestParamsClientBackend, PublicPasswordBackend, PublicPasswordJsonBackend
+from .backends import BasicClientBackend, RequestParamsClientBackend, PublicClientBackend, PublicPasswordJsonBackend
 from django.http import HttpResponseForbidden, HttpResponse
 from ..utils import now
 
@@ -73,7 +74,7 @@ class AccessTokenView(AccessTokenView):
     authentication = (
         BasicClientBackend,
         RequestParamsClientBackend,
-        PublicPasswordBackend,
+        PublicClientBackend,
         PublicPasswordJsonBackend,
     )
 
@@ -95,15 +96,34 @@ class AccessTokenView(AccessTokenView):
             raise OAuthError(form.errors)
         return form.cleaned_data
 
-    def get_access_token(self, request, user, scope, client):
+    def get_client_credentials_grant(self, request, data, client):
+        form = ClientCredentialsGrantForm(data, client=client)
+        if not form.is_valid():
+            raise OAuthError(form.errors)
+        return form.cleaned_data
+
+    def get_email_and_password_grant(self, request, data, client):
+        form = EmailAndPasswordGrantForm(data, client=client)
+        if not form.is_valid():
+            raise OAuthError(form.errors)
+        return form.cleaned_data
+
+    def get_access_token(self, request, user, scope, client, refreshable=True):
         try:
             # Attempt to fetch an existing access token.
-            at = AccessToken.objects.get(user=user, client=client,
-                                         scope=scope, expires__gt=now())
+            at = AccessToken.objects.get(
+                user=user, client=client, scope=scope, expires__gt=now())
         except AccessToken.DoesNotExist:
             # None found... make a new one!
             at = self.create_access_token(request, user, scope, client)
-            self.create_refresh_token(request, user, scope, at, client)
+            if refreshable:
+                self.create_refresh_token(request, user, scope, at, client)
+        except AccessToken.MultipleObjectsReturned:
+            # Simultaneously created tokens must be destroyeds
+            at = AccessToken.objects.filter(
+                user=user, client=client, scope=scope, expires__gt=now()).latest("pk")
+            AccessToken.objects.filter(user=user, client=client,
+                                       scope=scope, expires__gt=now()).exclude(pk=at.pk).delete()
         return at
 
     def create_access_token(self, request, user, scope, client):
@@ -120,6 +140,10 @@ class AccessTokenView(AccessTokenView):
             client=client
         )
 
+    def update_refresh_token(self, rt, at):
+        rt.access_token = at
+        rt.save()
+
     def invalidate_grant(self, grant):
         if constants.DELETE_EXPIRED:
             grant.delete()
@@ -133,6 +157,16 @@ class AccessTokenView(AccessTokenView):
         else:
             rt.expired = True
             rt.save()
+
+    def invalidate_refresh_tokens_over_limit(self, user, scope, client, limit):
+        if limit > 0:
+            rt_list = RefreshToken.objects.filter(
+                user=user,
+                client=client,
+                access_token__scope=scope,
+                expired=False).order_by('-pk')[limit:]
+            for rt in rt_list:
+                self.invalidate_refresh_token(rt)
 
     def invalidate_access_token(self, at):
         if constants.DELETE_EXPIRED:

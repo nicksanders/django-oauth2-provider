@@ -3,7 +3,6 @@ from django.contrib import admin
 from django import forms
 from .models import AccessToken, Grant, Client, RefreshToken
 from .. import scope
-from functools import reduce
 
 class ScopeMixin(object):
     """
@@ -19,7 +18,7 @@ class ScopeMixin(object):
         """
         default = 0
 
-        flags = list(map(int, self.cleaned_data.get('scope', [])))
+        flags = map(int, self.cleaned_data.get('scope', []))
 
         return reduce(operator.or_, flags, default)
 

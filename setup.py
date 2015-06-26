@@ -21,7 +21,11 @@ setup(
         'Framework :: Django',
     ],
     install_requires=[
-        "shortuuid>=0.3"
+        "shortuuid>=0.4",
+        "pillow>=2.0.0"
+    ],
+    test_requires=[
+        "mock>=1.0.1",
     ],
     include_package_data=True,
     zip_safe=False,

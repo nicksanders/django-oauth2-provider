@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-
+from __future__ import unicode_literals
 import json
-import urllib.parse
+import urlparse
 import logging
 
 from django.core.exceptions import ObjectDoesNotExist
@@ -83,7 +83,7 @@ class Mixin(object):
         """
         Clear all OAuth related data from the session store.
         """
-        for key in list(request.session.keys()):
+        for key in request.session.keys():
             if key.startswith(constants.SESSION_KEY):
                 del request.session[key]
 
@@ -279,7 +279,7 @@ class Authorize(OAuthView, Mixin):
             form_errors = e.args[0]
             if 'error' not in form_errors:
                 new_error = None
-                for err, desc in list(form_errors.items()):
+                for err, desc in form_errors.items():
                     if err in ['redirect_uri', 'unauthorized_client']:
                         new_error = OAuthError({
                             'error': err,
@@ -290,7 +290,7 @@ class Authorize(OAuthView, Mixin):
                     logger.exception(e)
                     new_error = OAuthError({
                         'error': 'unknown_error',
-                        'error_description': _(list(form_errors.items())[0][1])
+                        'error_description': _(form_errors.items()[0][1])
                     })
                 e = new_error
             return self.error_response(request, e.args[0], status=400)
@@ -381,7 +381,7 @@ class Redirect(OAuthView, Mixin):
 
         redirect_uri = data.get('redirect_uri', None) or client.redirect_uri.split(" ")[0]
 
-        parsed = urllib.parse.urlparse(redirect_uri)
+        parsed = urlparse.urlparse(redirect_uri)
 
         # maybe it should looks like so??
         #query = QueryDict(parsed[4], mutable=True)
@@ -399,7 +399,7 @@ class Redirect(OAuthView, Mixin):
 
         parsed = parsed[:4] + (query.urlencode(), '')
 
-        redirect_uri = urllib.parse.ParseResult(*parsed).geturl()
+        redirect_uri = urlparse.ParseResult(*parsed).geturl()
 
         self.clear_data(request)
 
@@ -761,7 +761,7 @@ class AccessToken(OAuthView, Mixin):
                                                       super(AccessToken, self).options(request, *args, **kwargs))
 
     def add_allow_cors_header_to_response(self, request, response):
-        if 'HTTP_ORIGIN' in request.META:
+        if request.META.has_key('HTTP_ORIGIN'):
             response['Access-Control-Allow-Origin'] = request.META['HTTP_ORIGIN']
             response['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         return response

@@ -4,7 +4,7 @@ Default model implementations. Custom database or OAuth backends need to
 implement these models with fields and and methods to be compatible with the
 views in :attr:`provider.views`.
 """
-
+from __future__ import unicode_literals
 
 import os
 
@@ -50,7 +50,7 @@ class ScopeField(models.IntegerField):
 
     def validate(self, value, model_instance):
         # all the bits in value must be present in list of all scopes
-        return value == (value & scope.to_int(*list(scope.SCOPE_NAME_DICT.values())))
+        return value == (value & scope.to_int(*scope.SCOPE_NAME_DICT.values()))
 
     def __str__(self):
         return 'scope'

@@ -18,9 +18,9 @@ WRITE = 1 << 2
 READ_WRITE = READ | WRITE
 
 DEFAULT_SCOPES = (
-    (READ, 'read'),
-    (WRITE, 'write'),
-    (READ_WRITE, 'read+write'),
+    (READ, 'read', 'Read your data'),
+    (WRITE, 'write', 'Write your data'),
+    (READ_WRITE, 'read+write', 'Read & write your data'),
 )
 
 SCOPES = getattr(settings, 'OAUTH_SCOPES', DEFAULT_SCOPES)
@@ -41,3 +41,13 @@ ENFORCE_CLIENT_SECURE = getattr(settings, 'OAUTH_ENFORCE_CLIENT_SECURE', True)
 SESSION_KEY = getattr(settings, 'OAUTH_SESSION_KEY', 'oauth')
 
 SINGLE_ACCESS_TOKEN = getattr(settings, 'OAUTH_SINGLE_ACCESS_TOKEN', False)
+
+LOGO_FOLDER = getattr(settings, 'OAUTH2_LOGO_FOLDER', 'logos')
+
+IMAGE_STORAGE = getattr(settings, 'OAUTH2_IMAGE_STORAGE', None)
+
+# Limit the number of refresh token for the same client with same scope (0 is unlimit)
+LIMIT_NUM_REFRESH_TOKEN = getattr(settings, 'OAUTH_LIMIT_NUM_REFRESH_TOKEN', 0)
+
+# Do not invalidate the refresh token when using the it to refresh access token
+KEEP_REFRESH_TOKEN = getattr(settings, 'OAUTH_KEEP_REFRESH_TOKEN', False)
